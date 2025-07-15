@@ -1,138 +1,297 @@
-import type { MetaFunction } from "@remix-run/node";
+// @ts-nocheck
+import { useEffect, useState } from "react";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormControl from "@mui/material/FormControl";
+import FormLabel from "@mui/material/FormLabel";
+import Checkbox from "@mui/material/Checkbox";
+import Autocomplete from "@mui/material/Autocomplete";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
-export const meta: MetaFunction = () => {
-  return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
-  ];
+const locations = [
+  { label: "Hollywood", slug: "hollywood" },
+  { label: "Venice", slug: "venice" },
+  { label: "North Hollywood", slug: "north-hollywood" },
+  { label: "Downtown LA", slug: "los-angeles-downtown" },
+  { label: "Santa Barbara (Downtown)", slug: "santa-barbara-downtown" },
+  { label: "Santa Barbara (Uptown)", slug: "santa-barbara-uptown" },
+];
+
+const fitnessJourneyOptions = [
+  "It's my first time joining a gym",
+  "When I think fitness, I think Gold's Gym!",
+  "I want to stay fit, and look my best this year",
+  "I want to escape to the gym for some 'Me Time'",
+  "I'm ready for a lifestyle change, looking to work with a Personal Trainer or take Group Classes!",
+  "I'm a former athlete, trying to get back in shape",
+  "I'm proud of my fitness level, looking to maintain as I age",
+];
+
+const fitnessGoalOptions = [
+  "Lose 15 or more Lbs. of Body Fat",
+  "Gain Muscle/Weight",
+  "Cardio/Heart health",
+  "Injury Rehabilitation",
+  "Other",
+];
+
+const genderOptions = ["Female", "Male", "Other"];
+
+const initialForm = {
+  location: locations[0],
+  firstname: "",
+  lastname: "",
+  phone: "",
+  email: "",
+  birthdate: "",
+  gender: "Female",
+  address: "",
+  city: "",
+  state: "CA",
+  zip: "",
+  fitnessJourney: fitnessJourneyOptions[0],
+  fitnessGoal: fitnessGoalOptions[0],
+  waiver: false,
+  receiveComms: false,
+  receiveCommsGG: false,
 };
 
-export default function Index() {
+function toFormUrlEncoded(obj) {
+  return Object.entries(obj)
+    .map(
+      ([k, v]) =>
+        encodeURIComponent(k) + "=" + encodeURIComponent(typeof v === "boolean" ? (v ? "true" : "false") : v)
+    )
+    .join("&");
+}
+
+export default function GoldsGymForm() {
+  const [form, setForm] = useState(initialForm);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("golds-gym-form");
+    if (saved) setForm(JSON.parse(saved));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("golds-gym-form", JSON.stringify(form));
+  }, [form]);
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+  };
+
+  const handleLocationChange = (_, value) => {
+    setForm((prev) => ({ ...prev, location: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      // Build endpoint
+      const slug = form.location?.slug || "hollywood";
+      const endpoint = `https://offers-socal.goldsgym.com/${slug}-guest-vip`;
+      // Build form data
+      const data = {
+        guest_source: "Referral / Word of Mouth",
+        registration_type: "VIP Guest",
+        choose_location: form.location.label,
+        firstname: form.firstname,
+        lastname: form.lastname,
+        phone: form.phone,
+        email: form.email,
+        birthdate: form.birthdate,
+        gender: form.gender,
+        address: form.address,
+        city: form.city,
+        state: form.state,
+        zip: form.zip,
+        persona_identification_qs: form.fitnessJourney,
+        guest_reg__fitness_goal: form.fitnessGoal,
+        guest_waiver_consent: form.waiver,
+        tci_consent: true,
+        LEGAL_CONSENT_subscription_type_5097478: form.receiveCommsGG,
+      };
+      const body = toFormUrlEncoded(data);
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body,
+      });
+      if (!res.ok) throw new Error("Submission failed");
+      setSnackbar({ open: true, message: "Form submitted successfully!", severity: "success" });
+    } catch (err) {
+      setSnackbar({ open: true, message: "Submission failed. Please try again.", severity: "error" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <div className="flex h-screen items-center justify-center">
-      <div className="flex flex-col items-center gap-16">
-        <header className="flex flex-col items-center gap-9">
-          <h1 className="leading text-2xl font-bold text-gray-800 dark:text-gray-100">
-            Welcome to <span className="sr-only">Remix</span>
-          </h1>
-          <div className="h-[144px] w-[434px]">
-            <img
-              src="/logo-light.png"
-              alt="Remix"
-              className="block w-full dark:hidden"
-            />
-            <img
-              src="/logo-dark.png"
-              alt="Remix"
-              className="hidden w-full dark:block"
-            />
-          </div>
-        </header>
-        <nav className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-gray-200 p-6 dark:border-gray-700">
-          <p className="leading-6 text-gray-700 dark:text-gray-200">
-            What&apos;s next?
-          </p>
-          <ul>
-            {resources.map(({ href, text, icon }) => (
-              <li key={href}>
-                <a
-                  className="group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-500"
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {icon}
-                  {text}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
-    </div>
+    <Box component="form" onSubmit={handleSubmit} autoComplete="off" sx={{ width: "100%" }}>
+      <Typography variant="h4" fontWeight={700} mb={2}>
+        Gold's Gym Guest Pass Registration
+      </Typography>
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <Autocomplete
+            options={locations}
+            getOptionLabel={(option) => option.label}
+            value={form.location}
+            onChange={handleLocationChange}
+            renderInput={(params) => <TextField {...params} label="Location" required name="location" />} />
+        </Grid>
+        <Grid item xs={12} sm={6} />
+        <Grid item xs={12} sm={6}>
+          <TextField label="First name" name="firstname" required fullWidth value={form.firstname} onChange={handleChange} />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField label="Last name" name="lastname" required fullWidth value={form.lastname} onChange={handleChange} />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField label="Phone number" name="phone" required fullWidth value={form.phone} onChange={handleChange} />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField label="Email" name="email" type="email" required fullWidth value={form.email} onChange={handleChange} />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField label="Date of Birth" name="birthdate" type="date" required fullWidth value={form.birthdate} onChange={handleChange} InputLabelProps={{ shrink: true }} />
+        </Grid>
+        <Grid item xs={12}>
+          <FormControl component="fieldset" required>
+            <FormLabel component="legend">Gender</FormLabel>
+            <RadioGroup row name="gender" value={form.gender} onChange={handleChange}>
+              {genderOptions.map((g) => (
+                <FormControlLabel key={g} value={g} control={<Radio />} label={g} />
+              ))}
+            </RadioGroup>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12}>
+          <TextField label="Street address" name="address" required fullWidth value={form.address} onChange={handleChange} />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField label="City" name="city" required fullWidth value={form.city} onChange={handleChange} />
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <TextField label="State" name="state" required fullWidth value={form.state} onChange={handleChange} inputProps={{ readOnly: true }} />
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <TextField label="Postal code" name="zip" required fullWidth value={form.zip} onChange={handleChange} />
+        </Grid>
+        <Grid item xs={12}>
+          <FormControl component="fieldset" required sx={{ mt: 2 }}>
+            <FormLabel component="legend">What best describes your fitness journey?</FormLabel>
+            <RadioGroup name="fitnessJourney" value={form.fitnessJourney} onChange={handleChange}>
+              {fitnessJourneyOptions.map((opt) => (
+                <FormControlLabel key={opt} value={opt} control={<Radio />} label={opt} />
+              ))}
+            </RadioGroup>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12}>
+          <FormControl component="fieldset" required sx={{ mt: 2 }}>
+            <FormLabel component="legend">What is your current fitness goal?</FormLabel>
+            <RadioGroup name="fitnessGoal" value={form.fitnessGoal} onChange={handleChange} row>
+              {fitnessGoalOptions.map((opt) => (
+                <FormControlLabel key={opt} value={opt} control={<Radio />} label={opt} />
+              ))}
+            </RadioGroup>
+          </FormControl>
+        </Grid>
+        {/* --- Release Language Section --- */}
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" fontWeight="bold" sx={{ mt: 3 }}>
+            Release Language
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            I assume all risk, known and unknown, associated with my presence on the premises or my use of any apparatus, appliance, facility, premises, or services whatsoever, owned or operated by club, and I release club (including its related or affiliated entities, and their owners, employees, agents, and assigns) from any and all claims or causes of action (known and unknown) arising out of the negligence of the club, whether active or passive (exclusive of gross negligence), or of any of its related or affiliated entities, and their owners, employees, agents, and assigns. This release and express assumption of risk applies forever, regardless of whether I am at or on the premises as a guest, a member, or otherwise.
+          </Typography>
+        </Grid>
+        {/* --- Waiver Checkbox --- */}
+        <Grid item xs={12}>
+          <FormControlLabel
+            control={<Checkbox name="waiver" checked={form.waiver} onChange={handleChange} required />}
+            label={<Typography variant="body2" fontWeight="bold">I acknowledge that I have carefully read this Waiver and Release and fully understand that it is a waiver and release of liability.*</Typography>}
+          />
+        </Grid>
+        {/* --- Telephone Consumer Protection Act Section --- */}
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" fontWeight="bold" sx={{ mt: 3 }}>
+            Telephone Consumer Protection Act
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            By providing my contact information on this Guest Registration, I hereby expressly consent to the club and its related or affiliated entities, employees, agents, and assigns contacting me for marketing purposes by email, text, calling my cell phone or calling my residential land line, whether such contact be by direct or automated dialing, and whether such contact be in the form of direct human communication or automated or prerecorded message.
+          </Typography>
+        </Grid>
+        {/* --- Communication Consent Checkboxes --- */}
+        <Grid item xs={12}>
+          <FormControlLabel
+            control={<Checkbox name="receiveComms" checked={form.receiveComms} onChange={handleChange} />}
+            label={<Typography variant="body2" fontWeight="bold">I agree to receive communication(s) from Gold's Gym</Typography>}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <FormControlLabel
+            control={<Checkbox name="receiveCommsGG" checked={form.receiveCommsGG} onChange={handleChange} />}
+            label={<Typography variant="body2" fontWeight="bold">I agree to receive communications from Gold's Gym SoCal.</Typography>}
+          />
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            By submitting my mobile phone number and checking the box, I am consenting to receiving promotional updates from Gold's Gym regarding available subscriptions and gym services. Message frequency varies. Message and Data Rates may apply. Reply HELP for help. Reply STOP to OPT Out. No mobile information will be sold or shared with third parties/affiliates for marketing/promotional purposes. All the above categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties. You can unsubscribe from email and text messaging communications at any time.
+          </Typography>
+        </Grid>
+        {/* --- Submit Consent --- */}
+        <Grid item xs={12}>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            By clicking “Submit”, you consent to allow Gold’s Gym SoCal to store & process the personal information submitted above in order to provide you with the requested content.
+          </Typography>
+        </Grid>
+        {/* --- Policy Links and Disclaimer --- */}
+        <Grid item xs={12}>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2, mb: 0 }}>
+            View our{' '}
+            <a href="https://join.goldsgymsocal.com/privacy-policy/?__hstc=74114509.3eb0df6fd0b2e7e7ce266100ea9dbc48.1750874448960.1751306463941.1752617160569.10&__hssc=74114509.1.1752617160569&__hsfp=532530906&_gl=1*4bupmr*_gcl_au*MjA2MzYwNjE3My4xNzUwODc0NDQ4" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
+              Privacy Policy
+            </a>{' '}and{' '}
+            <a href="https://join.goldsgymsocal.com/agreement-terms/?__hstc=74114509.3eb0df6fd0b2e7e7ce266100ea9dbc48.1750874448960.1751306463941.1752617160569.10&__hssc=74114509.1.1752617160569&__hsfp=532530906&_gl=1*4bupmr*_gcl_au*MjA2MzYwNjE3My4xNzUwODc0NDQ4" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
+              Terms and Conditions
+            </a>. Offer only valid at open Gold's Gym SoCal locations. Other restrictions may apply.
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Message frequency varies. Reply HELP for help, STOP to cancel.
+          </Typography>
+        </Grid>
+        {/* --- Submit Button --- */}
+        <Grid item xs={12}>
+          <Button type="submit" variant="contained" size="large" fullWidth sx={{ mt: 2, bgcolor: '#bfa23a', color: '#fff', fontWeight: 'bold', '&:hover': { bgcolor: '#a68d2a' } }} disabled={submitting}>
+            {submitting ? "Submitting..." : "SUBMIT"}
+          </Button>
+        </Grid>
+      </Grid>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 }
 
-const resources = [
-  {
-    href: "https://remix.run/start/quickstart",
-    text: "Quick Start (5 min)",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="20"
-        viewBox="0 0 20 20"
-        fill="none"
-        className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
-      >
-        <path
-          d="M8.51851 12.0741L7.92592 18L15.6296 9.7037L11.4815 7.33333L12.0741 2L4.37036 10.2963L8.51851 12.0741Z"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: "https://remix.run/start/tutorial",
-    text: "Tutorial (30 min)",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="20"
-        viewBox="0 0 20 20"
-        fill="none"
-        className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
-      >
-        <path
-          d="M4.561 12.749L3.15503 14.1549M3.00811 8.99944H1.01978M3.15503 3.84489L4.561 5.2508M8.3107 1.70923L8.3107 3.69749M13.4655 3.84489L12.0595 5.2508M18.1868 17.0974L16.635 18.6491C16.4636 18.8205 16.1858 18.8205 16.0144 18.6491L13.568 16.2028C13.383 16.0178 13.0784 16.0347 12.915 16.239L11.2697 18.2956C11.047 18.5739 10.6029 18.4847 10.505 18.142L7.85215 8.85711C7.75756 8.52603 8.06365 8.21994 8.39472 8.31453L17.6796 10.9673C18.0223 11.0653 18.1115 11.5094 17.8332 11.7321L15.7766 13.3773C15.5723 13.5408 15.5554 13.8454 15.7404 14.0304L18.1868 16.4767C18.3582 16.6481 18.3582 16.926 18.1868 17.0974Z"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: "https://remix.run/docs",
-    text: "Remix Docs",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="20"
-        viewBox="0 0 20 20"
-        fill="none"
-        className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
-      >
-        <path
-          d="M9.99981 10.0751V9.99992M17.4688 17.4688C15.889 19.0485 11.2645 16.9853 7.13958 12.8604C3.01467 8.73546 0.951405 4.11091 2.53116 2.53116C4.11091 0.951405 8.73546 3.01467 12.8604 7.13958C16.9853 11.2645 19.0485 15.889 17.4688 17.4688ZM2.53132 17.4688C0.951566 15.8891 3.01483 11.2645 7.13974 7.13963C11.2647 3.01471 15.8892 0.951453 17.469 2.53121C19.0487 4.11096 16.9854 8.73551 12.8605 12.8604C8.73562 16.9853 4.11107 19.0486 2.53132 17.4688Z"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: "https://rmx.as/discord",
-    text: "Join Discord",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="20"
-        viewBox="0 0 24 20"
-        fill="none"
-        className="stroke-gray-600 group-hover:stroke-current dark:stroke-gray-300"
-      >
-        <path
-          d="M15.0686 1.25995L14.5477 1.17423L14.2913 1.63578C14.1754 1.84439 14.0545 2.08275 13.9422 2.31963C12.6461 2.16488 11.3406 2.16505 10.0445 2.32014C9.92822 2.08178 9.80478 1.84975 9.67412 1.62413L9.41449 1.17584L8.90333 1.25995C7.33547 1.51794 5.80717 1.99419 4.37748 2.66939L4.19 2.75793L4.07461 2.93019C1.23864 7.16437 0.46302 11.3053 0.838165 15.3924L0.868838 15.7266L1.13844 15.9264C2.81818 17.1714 4.68053 18.1233 6.68582 18.719L7.18892 18.8684L7.50166 18.4469C7.96179 17.8268 8.36504 17.1824 8.709 16.4944L8.71099 16.4904C10.8645 17.0471 13.128 17.0485 15.2821 16.4947C15.6261 17.1826 16.0293 17.8269 16.4892 18.4469L16.805 18.8725L17.3116 18.717C19.3056 18.105 21.1876 17.1751 22.8559 15.9238L23.1224 15.724L23.1528 15.3923C23.5873 10.6524 22.3579 6.53306 19.8947 2.90714L19.7759 2.73227L19.5833 2.64518C18.1437 1.99439 16.6386 1.51826 15.0686 1.25995ZM16.6074 10.7755L16.6074 10.7756C16.5934 11.6409 16.0212 12.1444 15.4783 12.1444C14.9297 12.1444 14.3493 11.6173 14.3493 10.7877C14.3493 9.94885 14.9378 9.41192 15.4783 9.41192C16.0471 9.41192 16.6209 9.93851 16.6074 10.7755ZM8.49373 12.1444C7.94513 12.1444 7.36471 11.6173 7.36471 10.7877C7.36471 9.94885 7.95323 9.41192 8.49373 9.41192C9.06038 9.41192 9.63892 9.93712 9.6417 10.7815C9.62517 11.6239 9.05462 12.1444 8.49373 12.1444Z"
-          strokeWidth="1.5"
-        />
-      </svg>
-    ),
-  },
-];
