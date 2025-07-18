@@ -1,5 +1,23 @@
 // @ts-nocheck
 import { useEffect, useState } from "react";
+import {
+  Box,
+  Typography,
+  Grid,
+  TextField,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Checkbox,
+  Button,
+  Divider,
+  Select,
+  MenuItem,
+  InputLabel,
+  Link,
+} from "@mui/material";
 
 const locations = [
   { label: "Hollywood", slug: "hollywood" },
@@ -49,17 +67,15 @@ const initialForm = {
   receiveCommsGG: false,
 };
 
-const toFormUrlEncoded = (obj) => {
-  return Object.entries(obj)
+const toFormUrlEncoded = (obj) =>
+  Object.entries(obj)
     .map(
       ([k, v]) =>
         encodeURIComponent(k) + "=" + encodeURIComponent(typeof v === "boolean" ? (v ? "true" : "false") : v)
     )
     .join("&");
-};
 
-const GoldsGymForm = () => {
-
+export default function GoldsGymForm() {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -73,7 +89,7 @@ const GoldsGymForm = () => {
     localStorage.setItem("golds-gym-form", JSON.stringify(form));
   }, [form]);
 
-  const handleTextChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -83,53 +99,21 @@ const GoldsGymForm = () => {
     setForm((prev) => ({ ...prev, [name]: checked }));
   };
 
-  const handleRadioChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleLocationChange = (e) => {
-    const selectedLocation = locations.find(loc => loc.label === e.target.value);
-    setForm((prev) => ({ ...prev, location: selectedLocation }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
       const slug = form.location?.slug || "hollywood";
       const endpoint = `https://offers-socal.goldsgym.com/${slug}-guest-vip`;
-      const data = {
-        guest_source: "Referral / Word of Mouth",
-        registration_type: "VIP Guest",
-        choose_location: form.location.label,
-        firstname: form.firstname,
-        lastname: form.lastname,
-        phone: form.phone,
-        email: form.email,
-        birthdate: form.birthdate,
-        gender: form.gender,
-        address: form.address,
-        city: form.city,
-        state: form.state,
-        zip: form.zip,
-        persona_identification_qs: form.fitnessJourney,
-        guest_reg__fitness_goal: form.fitnessGoal,
-        guest_waiver_consent: form.waiver,
-        tci_consent: true,
-        LEGAL_CONSENT_subscription_type_5097478: form.receiveCommsGG,
-      };
-      const body = toFormUrlEncoded(data);
+      const body = toFormUrlEncoded({ ...form, location: form.location.label });
       const res = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body,
       });
       if (!res.ok) throw new Error("Submission failed");
       setMessage("Form submitted successfully!");
-    } catch (err) {
+    } catch {
       setMessage("Submission failed. Please try again.");
     } finally {
       setSubmitting(false);
@@ -137,303 +121,355 @@ const GoldsGymForm = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-5 font-sans">
-      <h1 className="text-2xl font-bold mb-5 text-center">Gold's Gym Guest Pass Registration</h1>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: "background.default",
+        display: "flex",
+        justifyContent: "center",
+        pt: 6,
+        pb: 8,
+        px: 2,
+      }}
+    >
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{
+          width: "100%",
+          maxWidth: 550,
+          bgcolor: "background.paper",
+          border: 1,
+          borderColor: "divider",
+          boxShadow: 3,
+          borderRadius: 2,
+          p: { xs: 3, sm: 4 },
+        }}
+      >
+        {/* Heading */}
+        <Typography
+          variant="h4"
+          component="h1"
+          fontWeight={700}
+          align="center"
+          sx={{ mb: 1, lineHeight: 1.2 }}
+        >
+          {`Welcome to Gold's Gym ${form.location.label}!`}<br />Let's get started...
+        </Typography>
+        <Box
+          sx={{ width: 64, height: 4, bgcolor: "primary.main", mx: "auto", mb: 4 }}
+        />
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        {/* Location */}
-        <div className="flex flex-col gap-1">
-          <label htmlFor="location" className="font-bold text-sm">Location *</label>
-          <select
-            id="location"
+        {/* Location Select */}
+        <FormControl fullWidth size="small" sx={{ mb: 3 }}>
+          <InputLabel id="loc-label">Location</InputLabel>
+          <Select
+            labelId="loc-label"
+            label="Location"
             name="location"
             value={form.location.label}
-            onChange={handleLocationChange}
-            className="p-2 border border-gray-300 rounded text-base"
+            onChange={(e) => {
+              const loc = locations.find((l) => l.label === e.target.value) || locations[0];
+              setForm((prev) => ({ ...prev, location: loc }));
+            }}
           >
             {locations.map((loc) => (
-              <option key={loc.slug} value={loc.label}>
+              <MenuItem key={loc.slug} value={loc.label}>
                 {loc.label}
-              </option>
+              </MenuItem>
             ))}
-          </select>
-        </div>
+          </Select>
+        </FormControl>
 
-        {/* Name fields */}
-        <div className="flex gap-5">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="firstname" className="font-bold text-sm">First name *</label>
-            <input
-              id="firstname"
-              name="firstname"
-              type="text"
-              value={form.firstname}
-              onChange={handleTextChange}
-              className="p-2 border border-gray-300 rounded text-base"
-              required
-              autoComplete="given-name"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="lastname" className="font-bold text-sm">Last name *</label>
-            <input
-              id="lastname"
-              name="lastname"
-              type="text"
-              value={form.lastname}
-              onChange={handleTextChange}
-              className="p-2 border border-gray-300 rounded text-base"
-              required
-              autoComplete="family-name"
-            />
-          </div>
-        </div>
-
-        {/* Contact info */}
-        <div className="flex flex-col gap-1">
-          <label htmlFor="phone" className="font-bold text-sm">Phone number *</label>
-          <input
-            id="phone"
-            type="tel"
-            name="phone"
-            value={form.phone}
-            onChange={handleTextChange}
-            className="p-2 border border-gray-300 rounded text-base"
+        {/* Name Row */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            gap: 2,
+            mb: 2,
+          }}
+        >
+          <TextField
+            label="First name"
+            name="firstname"
+            value={form.firstname}
+            onChange={handleChange}
+            size="small"
+            fullWidth
             required
-            autoComplete="tel"
           />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label htmlFor="email" className="font-bold text-sm">Email *</label>
-          <input
-            id="email"
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleTextChange}
-            className="p-2 border border-gray-300 rounded text-base"
+          <TextField
+            label="Last name"
+            name="lastname"
+            value={form.lastname}
+            onChange={handleChange}
+            size="small"
+            fullWidth
             required
-            autoComplete="email"
           />
-        </div>
+        </Box>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="birthdate" className="font-bold text-sm">Date of Birth *</label>
-          <input
-            id="birthdate"
-            name="birthdate"
-            type="date"
-            value={form.birthdate}
-            onChange={handleTextChange}
-            className="p-2 border border-gray-300 rounded text-base"
-            required
-            autoComplete="bday"
-          />
-        </div>
+        <TextField
+          label="Phone number"
+          name="phone"
+          value={form.phone}
+          onChange={handleChange}
+          size="small"
+          fullWidth
+          required
+          sx={{ mb: 2 }}
+        />
+
+        <TextField
+          label="Email"
+          name="email"
+          type="email"
+          value={form.email}
+          onChange={handleChange}
+          size="small"
+          fullWidth
+          required
+          sx={{ mb: 2 }}
+        />
+
+        <TextField
+          label="Date of Birth"
+          name="birthdate"
+          type="date"
+          value={form.birthdate}
+          onChange={handleChange}
+          size="small"
+          fullWidth
+          required
+          InputLabelProps={{ shrink: true }}
+          sx={{ mb: 3 }}
+        />
 
         {/* Gender */}
-        <div className="flex flex-col gap-1">
-          <span className="font-bold text-sm">Gender *</span>
-          <div className="flex gap-5">
-            {genderOptions.map((gender) => (
-              <label key={gender} htmlFor={`gender-${gender}`} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  id={`gender-${gender}`}
-                  type="radio"
-                  name="gender"
-                  value={gender}
-                  checked={form.gender === gender}
-                  onChange={handleRadioChange}
-                  autoComplete="sex"
-                />
-                {gender}
-              </label>
+        <FormControl component="fieldset" sx={{ mb: 3 }}>
+          <FormLabel component="legend">Gender</FormLabel>
+          <RadioGroup
+            row
+            name="gender"
+            value={form.gender}
+            onChange={handleChange}
+          >
+            {genderOptions.map((g) => (
+              <FormControlLabel
+                key={g}
+                value={g}
+                control={<Radio color="primary" />}
+                label={g}
+              />
             ))}
-          </div>
-        </div>
+          </RadioGroup>
+        </FormControl>
 
-        {/* Address */}
-        <div className="flex flex-col gap-1">
-          <label htmlFor="address" className="font-bold text-sm">Street address *</label>
-          <input
-            id="address"
-            type="text"
-            name="address"
-            value={form.address}
-            onChange={handleTextChange}
-            className="p-2 border border-gray-300 rounded text-base"
-            required
-            autoComplete="street-address"
-          />
-        </div>
+        <TextField
+          label="Street address"
+          name="address"
+          value={form.address}
+          onChange={handleChange}
+          size="small"
+          fullWidth
+          required
+          sx={{ mb: 2 }}
+        />
 
-        <div className="flex gap-5">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="city" className="font-bold text-sm">City *</label>
-            <input
-              id="city"
-              type="text"
-              name="city"
-              value={form.city}
-              onChange={handleTextChange}
-              className="p-2 border border-gray-300 rounded text-base"
-              required
-              autoComplete="address-level2"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="state" className="font-bold text-sm">State *</label>
-            <input
-              id="state"
-              type="text"
+        <TextField
+          label="City"
+          name="city"
+          value={form.city}
+          onChange={handleChange}
+          size="small"
+          fullWidth
+          required
+          sx={{ mb: 2 }}
+        />
+
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid item xs={6}>
+            <TextField
+              label="State"
               name="state"
               value={form.state}
-              onChange={handleTextChange}
-              className="p-2 border border-gray-300 rounded text-base"
-              readOnly
-              autoComplete="address-level1"
+              onChange={handleChange}
+              size="small"
+              fullWidth
+              InputProps={{ readOnly: true }}
             />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="zip" className="font-bold text-sm">Postal code *</label>
-            <input
-              id="zip"
-              type="text"
+          </Grid>
+          <Grid item xs={6}>
+            <TextField
+              label="Postal code"
               name="zip"
               value={form.zip}
-              onChange={handleTextChange}
-              className="p-2 border border-gray-300 rounded text-base"
+              onChange={handleChange}
+              size="small"
+              fullWidth
               required
-              autoComplete="postal-code"
             />
-          </div>
-        </div>
+          </Grid>
+        </Grid>
 
         {/* Fitness Journey */}
-        <div className="flex flex-col gap-1">
-          <span className="font-bold text-sm">What best describes your fitness journey? *</span>
-          <div className="flex gap-5">
-            {fitnessJourneyOptions.map((option) => (
-              <label key={option} htmlFor={`fitnessJourney-${option}`} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  id={`fitnessJourney-${option}`}
-                  type="radio"
-                  name="fitnessJourney"
-                  value={option}
-                  checked={form.fitnessJourney === option}
-                  onChange={handleRadioChange}
-                  autoComplete="off"
-                />
-                {option}
-              </label>
+        <FormControl component="fieldset" sx={{ mb: 3 }}>
+          <FormLabel component="legend">
+            What best describes your fitness journey?
+          </FormLabel>
+          <RadioGroup
+            name="fitnessJourney"
+            value={form.fitnessJourney}
+            onChange={handleChange}
+          >
+            {fitnessJourneyOptions.map((opt) => (
+              <FormControlLabel
+                key={opt}
+                value={opt}
+                control={<Radio color="primary" />}
+                label={<Typography variant="body2">{opt}</Typography>}
+              />
             ))}
-          </div>
-        </div>
+          </RadioGroup>
+        </FormControl>
 
         {/* Fitness Goal */}
-        <div className="flex flex-col gap-1">
-          <span className="font-bold text-sm">What is your current fitness goal? *</span>
-          <div className="flex gap-5">
-            {fitnessGoalOptions.map((option) => (
-              <label key={option} htmlFor={`fitnessGoal-${option}`} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  id={`fitnessGoal-${option}`}
-                  type="radio"
-                  name="fitnessGoal"
-                  value={option}
-                  checked={form.fitnessGoal === option}
-                  onChange={handleRadioChange}
-                  autoComplete="off"
-                />
-                {option}
-              </label>
+        <FormControl component="fieldset" sx={{ mb: 3 }}>
+          <FormLabel component="legend">
+            What is your current fitness goal?
+          </FormLabel>
+          <RadioGroup
+            name="fitnessGoal"
+            value={form.fitnessGoal}
+            onChange={handleChange}
+          >
+            {fitnessGoalOptions.map((opt) => (
+              <FormControlLabel
+                key={opt}
+                value={opt}
+                control={<Radio color="primary" />}
+                label={<Typography variant="body2">{opt}</Typography>}
+              />
             ))}
-          </div>
-        </div>
+          </RadioGroup>
+        </FormControl>
 
         {/* Release Language */}
-        <div className="border border-gray-300 rounded p-4 mt-5">
-          <h3 className="text-lg font-bold mb-2">Release Language</h3>
-          <p>
-            I assume all risk, known and unknown, associated with my presence on the premises or my use of any apparatus, appliance, facility, premises, or services whatsoever, owned or operated by club, and I release club (including its related or affiliated entities, and their owners, employees, agents, and assigns) from any and all claims or causes of action (known and unknown) arising out of the negligence of the club, whether active or passive (exclusive of gross negligence), or of any of its related or affiliated entities, and their owners, employees, agents, and assigns. This release and express assumption of risk applies forever, regardless of whether I am at or on the premises as a guest, a member, or otherwise.
-          </p>
-          <label htmlFor="waiver" className="flex items-start gap-2 cursor-pointer">
-            <input
-              id="waiver"
-              type="checkbox"
-              name="waiver"
-              checked={form.waiver}
-              onChange={handleCheckboxChange}
-              required
-              autoComplete="off"
-            />
-            <span>I acknowledge that I have carefully read this Waiver and Release and fully understand that it is a waiver and release of liability.*</span>
-          </label>
-        </div>
+        <Box
+          sx={(theme) => ({
+            bgcolor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[50],
+            p: 2,
+            borderRadius: 1,
+            mb: 3,
+          })}
+        >
+          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+            Release Language
+          </Typography>
+          <Typography variant="caption" display="block" gutterBottom>
+            I assume all risk, known and unknown, associated with my presence on the premises or my use of any apparatus, appliance, facility, premises, or services whatsoever, owned or operated by club, and I release club (including its related or affiliated entities, and their owners, employees, agents, and assigns) from any and all claims or causes of action (known and unknown) arising out of the negligence of the club, whether active or passive (exclusive of gross negligence), or any of its related or affiliated entities, and their owners, employees, agents, and assigns.  This release and express assumption of risk applies forever, regardless of whether I am at or on the premises as a guest, a member, or otherwise.
+          </Typography>
+          <FormControlLabel
+            control={
+              <Checkbox
+                color="primary"
+                name="waiver"
+                checked={form.waiver}
+                onChange={handleCheckboxChange}
+                required
+              />
+            }
+            label={
+              <Typography variant="caption">
+                I acknowledge that I have carefully read this Waiver and Release and fully understand that it is a waiver and release of liability.*
+              </Typography>
+            }
+          />
+        </Box>
 
         {/* Communication Consent */}
-        <div className="border border-gray-300 rounded p-4 mt-5">
-          <h3 className="text-lg font-bold mb-2">Telephone Consumer Protection Act</h3>
-          <p>
+        <Box
+          sx={(theme) => ({
+            bgcolor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[50],
+            p: 2,
+            borderRadius: 1,
+            mb: 3,
+          })}
+        >
+          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+            Telephone Consumer Protection Act
+          </Typography>
+          <Typography variant="caption" display="block" gutterBottom>
             By providing my contact information on this Guest Registration, I hereby expressly consent to the club and its related or affiliated entities, employees, agents, and assigns contacting me for marketing purposes by email, text, calling my cell phone or calling my residential land line, whether such contact be by direct or automated dialing, and whether such contact be in the form of direct human communication or automated or prerecorded message.
-          </p>
-          <label htmlFor="receiveComms" className="flex items-start gap-2 cursor-pointer">
-            <input
-              id="receiveComms"
-              type="checkbox"
-              name="receiveComms"
-              checked={form.receiveComms}
-              onChange={handleCheckboxChange}
-              autoComplete="off"
-            />
-            <span>I agree to receive communication(s) from Gold's Gym</span>
-          </label>
-          <label htmlFor="receiveCommsGG" className="flex items-start gap-2 cursor-pointer">
-            <input
-              id="receiveCommsGG"
-              type="checkbox"
-              name="receiveCommsGG"
-              checked={form.receiveCommsGG}
-              onChange={handleCheckboxChange}
-              autoComplete="off"
-            />
-            <span>I agree to receive communications from Gold's Gym SoCal.</span>
-          </label>
-          <p className="text-xs text-gray-600 mt-2">
-            By submitting my mobile phone number and checking the box, I am consenting to receiving promotional updates from Gold's Gym regarding available subscriptions and gym services. Message frequency varies. Message and Data Rates may apply. Reply HELP for help. Reply STOP to OPT Out. No mobile information will be sold or shared with third parties/affiliates for marketing/promotional purposes. All the above categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties. You can unsubscribe from email and text messaging communications at any time.
-          </p>
-        </div>
+          </Typography>
+          <FormControlLabel
+            control={
+              <Checkbox
+                color="primary"
+                name="receiveComms"
+                checked={form.receiveComms}
+                onChange={handleCheckboxChange}
+              />
+            }
+            label={<Typography variant="caption">I agree to receive communication(s) from Gold's Gym</Typography>}
+          />
+        </Box>
 
         {/* Submit */}
-        <p className="text-sm text-gray-600">
-          By clicking "Submit", you consent to allow Gold's Gym SoCal to store & process the personal information submitted above in order to provide you with the requested content.
-        </p>
+        <Typography variant="caption" align="center" color="text.secondary" sx={{ mb: 2 }}>
+          View our{' '}
+          <Link
+            href="https://join.goldsgymsocal.com/privacy-policy/?__hstc=74114509.3eb0df6fd0b2e7e7ce266100ea9dbc48.1750874448960.1752769690464.1752778984704.14&__hssc=74114509.1.1752778984704&__hsfp=532530906&_gl=1*nx593j*_gcl_au*MjA2MzYwNjE3My4xNzUwODc0NDQ4"
+            target="_blank"
+            underline="hover"
+            color="primary"
+          >
+            Privacy Policy
+          </Link>{' '}
+          and{' '}
+          <Link
+            href="http://join.goldsgymsocal.com/agreement-terms/?__hstc=74114509.3eb0df6fd0b2e7e7ce266100ea9dbc48.1750874448960.1752769690464.1752778984704.14&__hssc=74114509.1.1752778984704&__hsfp=532530906&_gl=1*nx593j*_gcl_au*MjA2MzYwNjE3My4xNzUwODc0NDQ4"
+            target="_blank"
+            underline="hover"
+            color="primary"
+          >
+            Terms and Conditions
+          </Link>
+          . Offer only valid at open Gold's Gym SoCal locations. Other restrictions may apply.
+          <br />
+          Message frequency varies. Reply HELP for help, STOP to cancel.
+        </Typography>
 
-        <button
+        <Button
           type="submit"
-          className={`py-3 px-6 rounded font-bold text-base ${
-            submitting ? "bg-gray-300 cursor-not-allowed" : "bg-yellow-700 text-white cursor-pointer"
-          }`}
+          variant="contained"
+          color="primary"
           disabled={submitting}
+          sx={{
+            width: { xs: "100%", sm: 200 },
+            alignSelf: "center",
+            fontWeight: 700,
+          }}
         >
-          {submitting ? "Submitting..." : "Submit"}
-        </button>
+          {submitting ? "Submitting..." : "SUBMIT"}
+        </Button>
 
         {message && (
-          <div
-            className={`p-2 rounded mt-2 ${
-              message.includes("successfully")
-                ? "bg-green-100 text-green-800 border border-green-300"
-                : "bg-red-100 text-red-800 border border-red-300"
-            }`}
+          <Box
+            sx={{
+              mt: 2,
+              p: 2,
+              bgcolor: message.includes("successfully") ? "success.light" : "error.light",
+              color: message.includes("successfully") ? "success.contrastText" : "error.contrastText",
+              borderRadius: 1,
+              textAlign: "center",
+            }}
           >
-            {message}
-          </div>
+            <Typography variant="caption">{message}</Typography>
+          </Box>
         )}
-      </form>
-    </div>
+      </Box>
+    </Box>
   );
-};
-
-export default GoldsGymForm;
+}
