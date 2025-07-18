@@ -75,7 +75,7 @@ const toFormUrlEncoded = (obj) =>
     )
     .join("&");
 
-export default function GoldsGymForm() {
+const GoldsGymWaiver = () => {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -473,3 +473,5 @@ export default function GoldsGymForm() {
     </Box>
   );
 }
+
+export default GoldsGymWaiver;

@@ -1,5 +1,9 @@
 import { createTheme } from "@mui/material/styles";
 
+interface PaperPropsVariantOverrides {
+  goldCard: true;
+}
+
 export const getTheme = (mode: 'light' | 'dark') =>
   createTheme({
     palette: {

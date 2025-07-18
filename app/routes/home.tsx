@@ -1,5 +1,5 @@
 import type { Route } from "./+types/home";
-import GoldsGymForm from "../welcome/welcome";
+import GoldsGymWaiver from "../GoldsGymWaiver/GoldsGymWaiver";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -9,6 +9,5 @@ export function meta({ }: Route.MetaArgs) {
 }
 
 export default function Home() {
-  console.log('hello world')
-  return <GoldsGymForm />;
+    return <GoldsGymWaiver />;
 }
